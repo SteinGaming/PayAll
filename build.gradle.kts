@@ -1,13 +1,6 @@
-import groovy.xml.dom.DOMCategory.attributes
 import net.minecraftforge.gradle.common.util.RunConfig
-import org.gradle.internal.impldep.org.joda.time.format.DateTimeFormatter
-import org.gradle.internal.impldep.org.joda.time.format.DateTimeFormatterBuilder
-import org.gradle.internal.impldep.org.joda.time.format.DateTimeParserBucket
 import org.gradle.jvm.tasks.Jar
-import org.gradle.kotlin.dsl.jarJar
-import org.gradle.kotlin.dsl.runtimeClasspath
-import org.jetbrains.kotlin.backend.wasm.lower.excludeDeclarationsFromCodegen
-import java.util.Date
+
 plugins {
     kotlin("jvm") version "1.8.0"
     application

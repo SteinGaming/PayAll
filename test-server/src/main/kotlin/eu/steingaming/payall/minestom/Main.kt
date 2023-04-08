@@ -3,17 +3,13 @@ package eu.steingaming.payall.minestom
 import net.minestom.server.MinecraftServer
 import net.minestom.server.command.CommandManager
 import net.minestom.server.command.builder.Command
-import net.minestom.server.command.builder.CommandExecutor
-import net.minestom.server.command.builder.arguments.Argument
 import net.minestom.server.command.builder.arguments.ArgumentType
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.fakeplayer.FakePlayer
 import net.minestom.server.entity.fakeplayer.FakePlayerOption
 import net.minestom.server.event.player.PlayerLoginEvent
-import net.minestom.server.event.player.PlayerSpawnEvent
 import net.minestom.server.instance.block.Block
-import net.minestom.server.utils.chunk.ChunkSupplier
 import java.util.*
 
 
