@@ -29,8 +29,8 @@ repositories {
     maven("https://maven.minecraftforge.net/")
 }
 
-val minecraftVersions = listOf("1.19.3-44.1.0", "1.19-41.1.0")
-val selectedMinecraftVersion = 0
+val minecraftVersions = listOf("1.19.3-44.1.0", "1.19.2-43.2.0", "1.19.1-42.0.9", "1.19-41.1.0")
+val selectedMinecraftVersion = 1
 
 minecraft {
     // The mappings can be changed at any time and must be in the following format.

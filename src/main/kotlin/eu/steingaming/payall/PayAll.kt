@@ -3,9 +3,6 @@ package eu.steingaming.payall
 import com.mojang.logging.LogUtils
 import kotlinx.coroutines.*
 import net.minecraft.client.Minecraft
-import net.minecraft.client.multiplayer.ClientPacketListener
-import net.minecraft.client.multiplayer.PlayerInfo
-import net.minecraft.client.multiplayer.ServerData
 import net.minecraft.commands.arguments.ArgumentSignatures
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
@@ -14,6 +11,7 @@ import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.fml.common.Mod
 import java.time.Instant
+import java.util.*
 
 @Mod(PayAll.MODID)
 class PayAll {
@@ -92,7 +90,8 @@ class PayAll {
                     Minecraft.getInstance().player?.connection?.onlinePlayers?.map { it.profile.name }
                         ?.toTypedArray()
                 } ?: arrayOf(),
-                *get { Minecraft.getInstance().level?.players()?.map { it.gameProfile.name }?.toTypedArray() } ?: arrayOf()
+                *get { Minecraft.getInstance().level?.players()?.map { it.gameProfile.name }?.toTypedArray() }
+                    ?: arrayOf() // This is only as a fallback, no good else
             ).apply { remove(Minecraft.getInstance().player?.gameProfile?.name) }.toList()
             if (dryRun) {
                 sendMessage("§aPlayers Indexed: $players")
@@ -118,14 +117,36 @@ class PayAll {
                         Minecraft.getInstance().connection!!, newCMD
                     )
                 } catch (e: Throwable) {
-                    e.printStackTrace()
-                    Minecraft.getInstance().player?.connection?.send( // For 1.19.0
-                        ServerboundChatCommandPacket::class.java.getConstructor(
-                            String::class.java,
-                            Instant::class.java,
-                            ArgumentSignatures::class.java,
-                            Boolean::class.java
-                        ).newInstance(newCMD, Instant.now(), ArgumentSignatures::class.java.getConstructor(Long::class.java, java.util.Map::class.java).newInstance(0L, java.util.Map.of<String, ByteArray>()), true)
+                    Minecraft.getInstance().player?.connection?.send(
+                        try {
+                            ServerboundChatCommandPacket::class.java.getConstructor( // For 1.19.0
+                                String::class.java,
+                                Instant::class.java,
+                                ArgumentSignatures::class.java,
+                                Boolean::class.java
+                            ).newInstance(
+                                newCMD,
+                                Instant.now(),
+                                ArgumentSignatures::class.java.getConstructor(
+                                    Long::class.java,
+                                    java.util.Map::class.java
+                                ).newInstance(0L, java.util.Map.of<String, ByteArray>()),
+                                true
+                            )
+                        } catch (t: Throwable) {
+                            ServerboundChatCommandPacket::class.java.getConstructor( // For 1.19.2 (maybe 1.19.1)
+                                String::class.java,
+                                Instant::class.java,
+                                Long::class.java,
+                                ArgumentSignatures::class.java,
+                                Boolean::class.java,
+                                net.minecraft.network.chat.LastSeenMessages.Update::class.java
+                            ).newInstance(
+                                newCMD, Instant.now(), 0L, ArgumentSignatures.EMPTY, true, net.minecraft.network.chat.LastSeenMessages.Update::class.java.getConstructor(net.minecraft.network.chat.LastSeenMessages::class.java, Optional::class.java).newInstance(
+                                    net.minecraft.network.chat.LastSeenMessages(listOf()), Optional.empty<net.minecraft.network.chat.LastSeenMessages.Entry>()
+                                )
+                            )
+                        }
                     )
                 }
                 delay((delay * 1000L).toLong())
