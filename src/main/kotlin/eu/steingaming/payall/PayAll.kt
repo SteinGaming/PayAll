@@ -69,39 +69,12 @@ class PayAll {
     }
 
 
-    private inline fun <reified T> get(run: () -> Array<T>?): Array<T> {
+    private inline fun <reified T> get(run: () -> T?): T? {
         return try {
-            run() ?: arrayOf()
+            run()
         } catch (t: Throwable) {
-            arrayOf()
+            null
         }
-    }
-
-    enum class Type(val get: (obj: Any, name: String, args: Array<*>) -> Any) {
-        FUNCTION({ obj, name, args ->
-            obj::class.java.getDeclaredMethod(name, *args.map { (it ?: return@map null)::class.java }.toTypedArray())
-                .invoke(obj, *args)
-        }),
-        FIELD({ obj, name, _ ->
-            obj::class.java.getDeclaredField(name).get(obj)
-        })
-    }
-
-    private fun path(type: Type, name: String, vararg args: Array<*>): Pair<Type, Pair<String, Array<*>>> =
-        type to (name to args)
-
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <S, E> from(start: S?, vararg path: Pair<Type, Pair<String, Array<*>>>): E? {
-        var current: Any? = start
-        for (a in path) {
-            try {
-                current = a.first.get.invoke(current ?: return null, a.second.first, a.second.second)
-            } catch (e: Throwable) {
-                return null
-            }
-        }
-        return (current as E?)
     }
 
     private suspend fun run(
@@ -113,19 +86,13 @@ class PayAll {
         coroutineScope {
             val players = mutableSetOf<String>( // Only have every player once
                 *get {
-                    from<ServerData, List<Component?>>(
-                        Minecraft.getInstance().currentServer,
-                        path(Type.FIELD, "playerList")
-                    )?.mapNotNull { it?.string }?.toTypedArray()
-                },
+                    Minecraft.getInstance().currentServer?.playerList?.mapNotNull { it?.string }?.toTypedArray()
+                } ?: arrayOf(),
                 *get {
-                    from<ClientPacketListener, Collection<PlayerInfo>>(
-                        Minecraft.getInstance().player?.connection,
-                        path(Type.FUNCTION, "getListedOnlinePlayers")
-                    )?.map { it.profile.name }
+                    Minecraft.getInstance().player?.connection?.onlinePlayers?.map { it.profile.name }
                         ?.toTypedArray()
-                },
-                *get { Minecraft.getInstance().level?.players()?.map { it.gameProfile.name }?.toTypedArray() }
+                } ?: arrayOf(),
+                *get { Minecraft.getInstance().level?.players()?.map { it.gameProfile.name }?.toTypedArray() } ?: arrayOf()
             ).apply { remove(Minecraft.getInstance().player?.gameProfile?.name) }.toList()
             if (dryRun) {
                 sendMessage("§aPlayers Indexed: $players")
