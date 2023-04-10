@@ -2,8 +2,8 @@
 This is a minecraft mod, with which you're able to pay everyone on the server. <br>
 I made this out of boredom while watching a YouTube video from DuperTrooper, in which he paid everyone manually. <br>
 He replied to someone in the comments, who asked why he doesn't use a mod to automate it, that he doesn't have a ***competent*** developer to do that, and i just tried to do that.
-### Currently supported and tested: 1.19.4, 1.19.3, 1.19.2, 1.19.1, 1.19.0
-### Currently supported but NOT tested: 1.18.2
+### Currently supported and tested: 1.19.4, 1.19.3, 1.19.2, 1.19.1, 1.19.0, 1.18.2
+### Currently supported but NOT tested: 
 ## Table of Contents
 
 - [Usage](#usage)
