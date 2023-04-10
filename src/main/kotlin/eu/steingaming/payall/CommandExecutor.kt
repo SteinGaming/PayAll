@@ -70,7 +70,7 @@ object CommandExecutor {
                     )
                 )
             )
-        }, { // 1.18(.2) support
+        }, { // 1.18.2 and 1.18.1 support
             Minecraft.getInstance().player?.connection?.send(ServerboundChatPacket::class.java.getConstructor(String::class.java).newInstance("/$cmd"))
         })
     }
