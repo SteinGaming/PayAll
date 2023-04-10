@@ -1,6 +1,6 @@
 package eu.steingaming.payall
 
-import com.mojang.logging.LogUtils
+//import com.mojang.logging.LogUtils
 import kotlinx.coroutines.*
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -9,12 +9,16 @@ import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.fml.common.Mod
 import java.util.*
+//import org.slf4j.Logger
+//import org.slf4j.LoggerFactory
 
 @Mod(PayAll.MODID)
 class PayAll {
     companion object {
         const val MODID = "payall"
-        val logger = LogUtils.getLogger()
+        //val logger: Logger = try { LogUtils.getLogger() } catch (_: Throwable) {
+        //    LoggerFactory.getLogger(PayAll::class.java)
+        //}
     }
 
     private var job: Job? = null
@@ -30,7 +34,7 @@ class PayAll {
     }
 
     private fun usage() {
-        sendMessage("§cUsage: /payall <delay seconds> <amount> [custom-command]...")
+        sendMessage("§cUsage: payall <delay seconds> <amount> [custom-command]...")
         sendMessage("§cThe custom command (if given) has to contain \"$\" (replaced by amount) and \"!\" (replaced by player name)")
     }
 
@@ -47,7 +51,6 @@ class PayAll {
     init {
 
         MinecraftForge.EVENT_BUS.addListener<ClientChatEvent>(EventPriority.HIGHEST) a@{ it ->
-            logger.info("CONTENT: " + it.originalMessage)
             val split = it.originalMessage.split(" ")
             if (split.getOrNull(0)?.lowercase()?.startsWith("payall") != true) return@a
             val dryRun = split[0].lowercase().endsWith("dry")
