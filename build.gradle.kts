@@ -29,8 +29,11 @@ repositories {
     maven("https://maven.minecraftforge.net/")
 }
 
-val minecraftVersions = listOf("1.19.3-44.1.0", "1.19.2-43.2.0", "1.19.1-42.0.9", "1.19-41.1.0")
-val selectedMinecraftVersion = 1
+val minecraftVersions = listOf(
+    "1.19.4-45.0.43", "1.19.3-44.1.0", "1.19.2-43.2.0", "1.19.1-42.0.9", "1.19-41.1.0",
+    "1.18.2-40.2.1"
+)
+val selectedMinecraftVersion = 0
 
 minecraft {
     // The mappings can be changed at any time and must be in the following format.
@@ -105,12 +108,6 @@ val shade: Configuration by configurations.creating
 configurations.compileClasspath.get().extendsFrom(shade)
 dependencies {
     minecraft("net.minecraftforge:forge:${minecraftVersions[selectedMinecraftVersion]}")
-    //minecraftLibrary("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4") {
-    //    exclude("org.jetbrains", "annotations")
-    //}
-    //implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4") {
-    //    exclude("org.jetbrains", "annotations")
-    //}
     shade("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4") {
         exclude("org.jetbrains", "annotations")
     }
@@ -144,21 +141,15 @@ tasks {
         finalizedBy("reobfShadowJar")
     }
 
+    withType(JavaCompile::class).configureEach {
+        options.encoding = "UTF-8" // Use the UTF-8 charset for Java compilation
+    }
+
     jar {
         apply()
     }
-    test {
-        useJUnitPlatform()
-    }
 }
+
 kotlin {
     jvmToolchain(17)
-}
-
-tasks.withType(JavaCompile::class).configureEach {
-    options.encoding = "UTF-8" // Use the UTF-8 charset for Java compilation
-}
-
-application {
-    mainClass.set("MainKt")
 }
