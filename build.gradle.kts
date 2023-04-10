@@ -5,7 +5,6 @@ import org.gradle.jvm.tasks.Jar
 
 plugins {
     kotlin("jvm") version "1.8.0"
-    application
     id("net.minecraftforge.gradle") version ("5.+")
     id("com.github.johnrengelman.shadow") version ("7.+")
 }
