@@ -25,7 +25,7 @@ class PayAll {
         try {
             Minecraft.getInstance().player?.sendSystemMessage(Component.literal(str))
         } catch (t: Throwable) { // 1.18 support
-            Minecraft.getInstance().player?.displayClientMessage(Component.nullToEmpty(str), true)
+            Minecraft.getInstance().player?.displayClientMessage(Component.nullToEmpty(str), false)
         }
     }
 
