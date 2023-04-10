@@ -7,7 +7,7 @@ repositories {
     maven("https://jitpack.io")
 }
 dependencies {
-    implementation("com.github.Minestom.Minestom:Minestom:1.19.3-SNAPSHOT")
+    implementation("com.github.Minestom.Minestom:Minestom:8ad2c7701f")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 }
 
