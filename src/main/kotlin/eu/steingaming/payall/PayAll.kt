@@ -3,14 +3,11 @@ package eu.steingaming.payall
 import com.mojang.logging.LogUtils
 import kotlinx.coroutines.*
 import net.minecraft.client.Minecraft
-import net.minecraft.commands.arguments.ArgumentSignatures
 import net.minecraft.network.chat.Component
-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 import net.minecraftforge.client.event.ClientChatEvent
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.fml.common.Mod
-import java.time.Instant
 import java.util.*
 
 @Mod(PayAll.MODID)
@@ -25,7 +22,11 @@ class PayAll {
     private val scope = CoroutineScope(Dispatchers.Default)
 
     private fun sendMessage(str: String) {
-        Minecraft.getInstance().player?.sendSystemMessage(Component.literal(str))
+        try {
+            Minecraft.getInstance().player?.sendSystemMessage(Component.literal(str))
+        } catch (t: Throwable) { // 1.18 support
+            Minecraft.getInstance().player?.displayClientMessage(Component.nullToEmpty(str), true)
+        }
     }
 
     private fun usage() {
@@ -75,6 +76,7 @@ class PayAll {
         }
     }
 
+
     private suspend fun run(
         cmd: String,
         amount: Long,
@@ -109,46 +111,7 @@ class PayAll {
                 val p = players.getOrNull(i++) ?: break
                 sendMessage("§7Sending: /${cmd.replace("!", p).replace("$", amount.toString())}")
                 val newCMD = cmd.replace("!", p).replace("$", amount.toString())
-                try {
-                    Minecraft.getInstance().connection!!::class.java.getDeclaredMethod(
-                        "m_246623_", // Obfuscated "sendCommand"
-                        String::class.java
-                    ).invoke(
-                        Minecraft.getInstance().connection!!, newCMD
-                    )
-                } catch (e: Throwable) {
-                    Minecraft.getInstance().player?.connection?.send(
-                        try {
-                            ServerboundChatCommandPacket::class.java.getConstructor( // For 1.19.0
-                                String::class.java,
-                                Instant::class.java,
-                                ArgumentSignatures::class.java,
-                                Boolean::class.java
-                            ).newInstance(
-                                newCMD,
-                                Instant.now(),
-                                ArgumentSignatures::class.java.getConstructor(
-                                    Long::class.java,
-                                    java.util.Map::class.java
-                                ).newInstance(0L, java.util.Map.of<String, ByteArray>()),
-                                true
-                            )
-                        } catch (t: Throwable) {
-                            ServerboundChatCommandPacket::class.java.getConstructor( // For 1.19.2 (maybe 1.19.1)
-                                String::class.java,
-                                Instant::class.java,
-                                Long::class.java,
-                                ArgumentSignatures::class.java,
-                                Boolean::class.java,
-                                net.minecraft.network.chat.LastSeenMessages.Update::class.java
-                            ).newInstance(
-                                newCMD, Instant.now(), 0L, ArgumentSignatures.EMPTY, true, net.minecraft.network.chat.LastSeenMessages.Update::class.java.getConstructor(net.minecraft.network.chat.LastSeenMessages::class.java, Optional::class.java).newInstance(
-                                    net.minecraft.network.chat.LastSeenMessages(listOf()), Optional.empty<net.minecraft.network.chat.LastSeenMessages.Entry>()
-                                )
-                            )
-                        }
-                    )
-                }
+                CommandExecutor.runCommand(newCMD)
                 delay((delay * 1000L).toLong())
             }
             sendMessage("§aDone sending to ${players.size} players!")
