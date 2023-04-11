@@ -2,7 +2,7 @@
 This is a minecraft mod, with which you're able to pay everyone on the server. <br>
 I made this out of boredom while watching a YouTube video from DuperTrooper, in which he paid everyone manually. <br>
 He replied to someone in the comments, who asked why he doesn't use a mod to automate it, that he doesn't have a ***competent*** developer to do that, and i just tried to do that.
-### Currently supported and tested: 1.19.x, 1.18.2, 1.18.1
+### Currently supported and tested: 1.19.x, 1.18.x
 ### Currently supported but NOT tested: 
 ## Table of Contents
 
@@ -13,16 +13,17 @@ He replied to someone in the comments, who asked why he doesn't use a mod to aut
 - [Building (so you don't get ratted)](#building)
   - [Cleanup](#cleaning-up)
 ## Usage
-This mod uses chat messages, due to be being STUPID and not figuring out how client-side commands can be made, even after 4 hours of testing.
+~~This mod uses chat messages, due to be being STUPID and not figuring out how client-side commands can be made, even after 4 hours of testing.~~ <br>
+**After some testing with hours of crying, commands have been implemented!**
 ### Default usage
-``payall <delay in seconds> <amount>`` <br>
+``/payall <delay in seconds> <amount>`` <br>
 
 **Examples:**
-- ``payall 2 6969``
-- ``payall 0.67 10000000``
+- ``/payall 2 6969``
+- ``/payall 0.67 10000000``
 
 ### Custom usage
-``payall <delay in seconds> <amount> [custom command]...`` <br>
+``/payall <delay in seconds> <amount> [custom command]...`` <br>
 The default command used is ``pay player amount`` (e.g. ``pay SteinGaming 5000``) <br>
 In case a server switched the properties or uses a completely different command, you can append the command desired to the [Default Usage](#default-usage). <br>
 It these placeholders:
@@ -31,9 +32,9 @@ It these placeholders:
 
 **Examples:**
 - If the command is ``/deez PLAYER AMOUNT``:
-  - Then ``payall 2 6969 deez ! $``
+  - Then ``/payall 2 6969 deez ! $``
 - If the command is ``/nuts AMOUNT PLAYER``
-  - Then ``payall 0.67 10000000 nuts $ !``
+  - Then ``/payall 0.67 10000000 nuts $ !``
 
 ### Dryrunning
 ``payalldry ...`` <br>

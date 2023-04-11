@@ -1,13 +1,11 @@
 package eu.steingaming.payall
 
 import net.minecraft.client.Minecraft
+import net.minecraft.commands.arguments.ArgumentSignatures
+import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 import net.minecraft.network.protocol.game.ServerboundChatPacket
 import java.time.Instant
 import java.util.*
-import net.minecraft.commands.arguments.ArgumentSignatures
-import net.minecraft.network.chat.Component
-import net.minecraft.network.protocol.game.ClientboundCommandsPacket
-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 
 object CommandExecutor {
     private fun tryUntilNoErr(vararg inits: () -> Unit) {
@@ -70,7 +68,7 @@ object CommandExecutor {
                     )
                 )
             )
-        }, { // 1.18.x support
+        }, { // 1.18.x
             Minecraft.getInstance().player?.connection?.send(ServerboundChatPacket::class.java.getConstructor(String::class.java).newInstance("/$cmd"))
         })
     }

@@ -1,8 +1,6 @@
 package eu.steingaming.payall
 
 //import com.mojang.logging.LogUtils
-import com.mojang.brigadier.CommandDispatcher
-import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.LongArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
@@ -11,17 +9,11 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import kotlinx.coroutines.*
 import net.minecraft.client.Minecraft
 import net.minecraft.commands.CommandSourceStack
-import net.minecraft.commands.Commands
 import net.minecraft.network.chat.Component
-import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.client.event.ClientChatEvent
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent
-import net.minecraftforge.client.event.RegisterClientCommandsEvent
 import net.minecraftforge.common.MinecraftForge
-import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.fml.common.Mod
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent
 import java.util.*
 
 //import org.slf4j.Logger
@@ -43,7 +35,7 @@ class PayAll {
     private fun sendMessage(str: String) {
         try {
             Minecraft.getInstance().player?.sendSystemMessage(Component.literal(str))
-        } catch (t: Throwable) { // 1.18 support
+        } catch (t: Throwable) { // 1.18.x support
             Minecraft.getInstance().player?.displayClientMessage(Component.nullToEmpty(str), false)
         }
     }
@@ -63,55 +55,73 @@ class PayAll {
         null
     }
 
-    init {
-        fun handle(delay: Double, amount: Long, vararg cmd: String, dryRun: Boolean = false) {
-            job?.takeUnless { !it.isActive || it.isCompleted }?.cancel() ?: let {
-                //val delay = split.getDoubleOrUsage(1) ?: return@a
-                //val amount = split.getLongOrUsage(2) ?: return@a
-                val newCmd = cmd.takeUnless { it.isEmpty() }?.joinToString(separator = " ") ?: "pay ! $"
-                job = scope.launch {
-                    run(newCmd, amount, delay, dryRun)
-                }
-                return
+    private fun handle(delay: Double, amount: Long, vararg cmd: String, dryRun: Boolean = false) {
+        job?.takeUnless { !it.isActive || it.isCompleted }?.cancel() ?: let {
+            //val delay = split.getDoubleOrUsage(1) ?: return@a
+            //val amount = split.getLongOrUsage(2) ?: return@a
+            val newCmd = cmd.takeUnless { it.isEmpty() }?.joinToString(separator = " ") ?: "pay ! $"
+            job = scope.launch {
+                run(newCmd, amount, delay, dryRun)
             }
-            job = null
-            sendMessage("§aStopped PayAll!")
+            return
         }
+        job = null
+        sendMessage("§aStopped PayAll!")
+    }
 
-        MinecraftForge.EVENT_BUS.addListener<RegisterClientCommandsEvent>(EventPriority.HIGHEST) {
-            val init: (String, Boolean) -> Unit = { name, dry ->
-                it.dispatcher.register(
-                    LiteralArgumentBuilder.literal<CommandSourceStack>(name).executes { usage(); return@executes 1 }
-                        .then(RequiredArgumentBuilder.argument<CommandSourceStack, Double>(
-                            "delay",
-                            DoubleArgumentType.doubleArg()
-                        ).executes { usage(); return@executes 1 }.then(
-                            RequiredArgumentBuilder.argument<CommandSourceStack, Long>(
-                                "amount",
-                                LongArgumentType.longArg()
-                            ).executes {
-                                handle(
-                                    DoubleArgumentType.getDouble(it, "delay"),
-                                    LongArgumentType.getLong(it, "amount"),
-                                    cmd = emptyArray(),
-                                    dryRun = dry
-                                )
-                                return@executes 1
-                            }.then(RequiredArgumentBuilder.argument<CommandSourceStack, String>("command", StringArgumentType.greedyString()).executes {
-                                handle(
-                                    DoubleArgumentType.getDouble(it, "delay"),
-                                    LongArgumentType.getLong(it, "amount"),
-                                    cmd = StringArgumentType.getString(it, "command").split(" ", "-").toTypedArray(),
-                                    dryRun = dry
-                                )
-                                return@executes 1
-                            })
-                        )
-                        )).also { println("LITERAL: ${it.literal}") }
+    private val payAllCMD: (String, Boolean) -> LiteralArgumentBuilder<CommandSourceStack> = { name, dry ->
 
+        LiteralArgumentBuilder.literal<CommandSourceStack>(name).executes { usage(); return@executes 1 }
+            .then(RequiredArgumentBuilder.argument<CommandSourceStack, Double>(
+                "delay",
+                DoubleArgumentType.doubleArg()
+            ).executes { usage(); return@executes 1 }.then(
+                RequiredArgumentBuilder.argument<CommandSourceStack, Long>(
+                    "amount",
+                    LongArgumentType.longArg()
+                ).executes {
+                    handle(
+                        DoubleArgumentType.getDouble(it, "delay"),
+                        LongArgumentType.getLong(it, "amount"),
+                        cmd = emptyArray(),
+                        dryRun = dry
+                    )
+                    return@executes 1
+                }.then(RequiredArgumentBuilder.argument<CommandSourceStack, String>("command", StringArgumentType.greedyString()).executes {
+                    handle(
+                        DoubleArgumentType.getDouble(it, "delay"),
+                        LongArgumentType.getLong(it, "amount"),
+                        cmd = StringArgumentType.getString(it, "command").split(" ", "-").toTypedArray(),
+                        dryRun = dry
+                    )
+                    return@executes 1
+                })
+            )
+            )
+    }
+
+    init {
+        try {
+            MinecraftForge.EVENT_BUS.addListener<net.minecraftforge.client.event.RegisterClientCommandsEvent>(EventPriority.HIGHEST) {
+                val init: (String, Boolean) -> Unit = { name, dry ->
+                    it.dispatcher.register(
+                        payAllCMD(name, dry)
+                    )
+                }
+                init("payall", false)
+                init("payalldry", true)
             }
-            init("payall", false)
-            init("payalldry", true)
+        } catch (t: Throwable) {
+            MinecraftForge.EVENT_BUS.addListener<ClientChatEvent> e@{ // 1.18.0 is missing the ClientCommandHandler >:(
+                val split = it.originalMessage.split(" ") ?: return@e
+                if (!split[0].startsWith("/payall")) return@e
+                it.isCanceled = true
+                Minecraft.getInstance().gui.chat.addRecentChat(it.originalMessage)
+                val dry = split[0].endsWith("dry")
+                val delay = split.getDoubleOrUsage(1) ?: return@e
+                val amount = split.getLongOrUsage(2) ?: return@e
+                handle(delay, amount, cmd = split.subList(3, split.size).toTypedArray(), dryRun = dry)
+            }
         }
 
         //MinecraftForge.EVENT_BUS.addListener<ClientChatEvent>(EventPriority.HIGHEST) a@{ it ->
@@ -154,6 +164,7 @@ class PayAll {
                 *get { Minecraft.getInstance().level?.players()?.map { it.gameProfile.name }?.toTypedArray() }
                     ?: arrayOf() // This is only as a fallback, no good else
             ).apply { remove(Minecraft.getInstance().player?.gameProfile?.name) }.toList()
+                .shuffled() // we do a bit of gambling :D
             if (dryRun) {
                 sendMessage("§aPlayers Indexed: $players")
                 sendMessage("§aCMD Example: §6${cmd.replace("!", "PLAYER-NAME").replace("$", amount.toString())} ")
