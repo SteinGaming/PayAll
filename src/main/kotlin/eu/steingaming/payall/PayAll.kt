@@ -6,14 +6,15 @@ import com.mojang.brigadier.arguments.LongArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import eu.steingaming.payall.utils.*
 import kotlinx.coroutines.*
 import net.minecraft.client.Minecraft
 import net.minecraft.commands.CommandSourceStack
-import net.minecraft.network.chat.Component
 import net.minecraftforge.client.event.ClientChatEvent
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.fml.common.Mod
+import java.lang.reflect.Method
 import java.util.*
 
 //import org.slf4j.Logger
@@ -22,6 +23,7 @@ import java.util.*
 @Mod(PayAll.MODID)
 class PayAll {
     companion object {
+        lateinit var instance: PayAll
         const val MODID = "payall"
         //val logger: Logger = try { LogUtils.getLogger() } catch (_: Throwable) {
         //    LoggerFactory.getLogger(PayAll::class.java)
@@ -32,15 +34,57 @@ class PayAll {
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
+
+    private var chatMethod: Method? = null
+
+    val minecraft: Minecraft = Minecraft::class.java.declaredMethods.find { it.returnType == Minecraft::class.java }!!
+        .invoke(null) as Minecraft
+
     private fun sendMessage(str: String) {
-        try {
-            Minecraft.getInstance().player?.sendSystemMessage(Component.literal(str))
-        } catch (t: Throwable) { // 1.18.x support
-            Minecraft.getInstance().player?.displayClientMessage(Component.nullToEmpty(str), false)
-        }
+        CommandExecutor.tryUntilNoErr(
+            {
+                Minecraft.getInstance().player?.sendSystemMessage(net.minecraft.network.chat.Component.literal(str))
+            },
+            {
+                Minecraft.getInstance().player?.displayClientMessage(
+                    net.minecraft.network.chat.Component.nullToEmpty(str),
+                    false
+                )
+            },
+            { // 1.16.5
+                val player = find<Minecraft, Any>(
+                    minecraft,
+                    findFieldType(Class.forName("net.minecraft.client.entity.player.ClientPlayerEntity"))
+                )!!
+                (chatMethod ?: player::class.java.declaredMethods.find {
+                    it.parameterCount == 2
+                            && it.parameters[0].type == Class.forName("net.minecraft.util.text.ITextComponent")
+                            && it.parameters[1].type == Boolean::class.java
+                }!!.also { chatMethod = it }).invoke(
+                    player, Class.forName("net.minecraft.util.text.ITextComponent")
+                        .declaredMethods.find { it.parameterCount == 1 && it.parameters[0].type == String::class.java }!!
+                        .invoke(
+                            null, str
+                        ), false
+                )
+
+                //ITextComponent.nullToEmpty(str)
+            }
+        )?.printStackTrace()
+    }
+
+    /**
+     * @return if was active
+     */
+    private fun checkActive(): Boolean {
+        job?.takeUnless { !it.isActive || it.isCompleted }?.cancel() ?: return false
+        job = null
+        sendMessage("§aStopped PayAll!")
+        return true
     }
 
     private fun usage() {
+        if (checkActive()) return
         sendMessage("§cUsage: payall <delay seconds> <amount> [custom-command]...")
         sendMessage("§cThe custom command (if given) has to contain \"$\" (replaced by amount) and \"!\" (replaced by player name)")
     }
@@ -56,56 +100,78 @@ class PayAll {
     }
 
     private fun handle(delay: Double, amount: Long, vararg cmd: String, dryRun: Boolean = false) {
-        job?.takeUnless { !it.isActive || it.isCompleted }?.cancel() ?: let {
-            //val delay = split.getDoubleOrUsage(1) ?: return@a
-            //val amount = split.getLongOrUsage(2) ?: return@a
-            val newCmd = cmd.takeUnless { it.isEmpty() }?.joinToString(separator = " ") ?: "pay ! $"
-            job = scope.launch {
-                run(newCmd, amount, delay, dryRun)
-            }
-            return
+        if (checkActive()) return
+        job = scope.launch {
+            run(cmd.takeUnless { it.isEmpty() }?.joinToString(separator = " ") ?: "pay ! $", amount, delay, dryRun)
         }
-        job = null
-        sendMessage("§aStopped PayAll!")
     }
 
-    private val payAllCMD: (String, Boolean) -> LiteralArgumentBuilder<CommandSourceStack> = { name, dry ->
-
-        LiteralArgumentBuilder.literal<CommandSourceStack>(name).executes { usage(); return@executes 1 }
-            .then(RequiredArgumentBuilder.argument<CommandSourceStack, Double>(
-                "delay",
-                DoubleArgumentType.doubleArg()
-            ).executes { usage(); return@executes 1 }.then(
-                RequiredArgumentBuilder.argument<CommandSourceStack, Long>(
-                    "amount",
-                    LongArgumentType.longArg()
-                ).executes {
-                    handle(
-                        DoubleArgumentType.getDouble(it, "delay"),
-                        LongArgumentType.getLong(it, "amount"),
-                        cmd = emptyArray(),
-                        dryRun = dry
-                    )
-                    return@executes 1
-                }.then(RequiredArgumentBuilder.argument<CommandSourceStack, String>("command", StringArgumentType.greedyString()).executes {
-                    handle(
-                        DoubleArgumentType.getDouble(it, "delay"),
-                        LongArgumentType.getLong(it, "amount"),
-                        cmd = StringArgumentType.getString(it, "command").split(" ", "-").toTypedArray(),
-                        dryRun = dry
-                    )
-                    return@executes 1
-                })
-            )
+    private val payAllCMD: (String, Boolean) -> LiteralArgumentBuilder<*> = { name, dry ->
+        LiteralArgumentBuilder.literal<Any>(name).executes { usage(); return@executes 1 }
+            .then(
+                RequiredArgumentBuilder.argument<Any, Double>(
+                    "delay",
+                    DoubleArgumentType.doubleArg()
+                ).executes { usage(); return@executes 1 }.then(
+                    RequiredArgumentBuilder.argument<Any, Long>(
+                        "amount",
+                        LongArgumentType.longArg()
+                    ).executes {
+                        handle(
+                            DoubleArgumentType.getDouble(it, "delay"),
+                            LongArgumentType.getLong(it, "amount"),
+                            cmd = emptyArray(),
+                            dryRun = dry
+                        )
+                        return@executes 1
+                    }.then(
+                        RequiredArgumentBuilder.argument<Any, String>(
+                            "command",
+                            StringArgumentType.greedyString()
+                        ).executes {
+                            handle(
+                                DoubleArgumentType.getDouble(it, "delay"),
+                                LongArgumentType.getLong(it, "amount"),
+                                cmd = StringArgumentType.getString(it, "command").split(" ", "-").toTypedArray(),
+                                dryRun = dry
+                            )
+                            return@executes 1
+                        })
+                )
             )
     }
+
+
+    private var _recentChat: MutableList<String>? = null
+        get() {
+            return field ?: (try {
+                Minecraft.getInstance().gui.chat.recentChat
+            } catch (_: Throwable) {
+                null
+            } ?: find( // I hate 1.16.5
+                minecraft,
+                findFieldType(Class.forName("net.minecraft.client.gui.IngameGui")),
+                findFieldType(Class.forName("net.minecraft.client.gui.NewChatGui"), depth = 2),
+                findFieldType(List::class.java, depth = 2) // has 3 different list, but firs one is the correct one LUCKILY
+            )!!).also {
+                field = it
+            }
+        }
+
+    private val recentChat: MutableList<String>
+        get() = _recentChat!!
+
 
     init {
+        instance = this
+        @Suppress("UNCHECKED_CAST")
         try {
-            MinecraftForge.EVENT_BUS.addListener<net.minecraftforge.client.event.RegisterClientCommandsEvent>(EventPriority.HIGHEST) {
+            MinecraftForge.EVENT_BUS.addListener<net.minecraftforge.client.event.RegisterClientCommandsEvent>(
+                EventPriority.HIGHEST
+            ) {
                 val init: (String, Boolean) -> Unit = { name, dry ->
                     it.dispatcher.register(
-                        payAllCMD(name, dry)
+                        payAllCMD(name, dry) as LiteralArgumentBuilder<CommandSourceStack>
                     )
                 }
                 init("payall", false)
@@ -113,27 +179,17 @@ class PayAll {
             }
         } catch (t: Throwable) {
             MinecraftForge.EVENT_BUS.addListener<ClientChatEvent> e@{ // 1.18.0 is missing the ClientCommandHandler >:(
-                val split = it.originalMessage.split(" ") ?: return@e
+                val split = it.originalMessage.split(" ")
                 if (!split[0].startsWith("/payall")) return@e
                 it.isCanceled = true
-                Minecraft.getInstance().gui.chat.addRecentChat(it.originalMessage)
+                if (recentChat.let { r -> r.isEmpty() || r.last() != it.originalMessage })
+                    recentChat.add(it.originalMessage)
                 val dry = split[0].endsWith("dry")
                 val delay = split.getDoubleOrUsage(1) ?: return@e
                 val amount = split.getLongOrUsage(2) ?: return@e
                 handle(delay, amount, cmd = split.subList(3, split.size).toTypedArray(), dryRun = dry)
             }
         }
-
-        //MinecraftForge.EVENT_BUS.addListener<ClientChatEvent>(EventPriority.HIGHEST) a@{ it ->
-        //    // ClientCommandHandler.getDispatcher().setConsumer { context, success, result ->  }
-        //    val split = it.originalMessage.split(" ")
-        //    if (split.getOrNull(0)?.lowercase()?.startsWith("payall") != true) return@a
-        //    if (Minecraft.getInstance().gui.chat.recentChat.last() != it.originalMessage) // Check for versions lower than 1.19, which don't add the message when cancelled
-        //        Minecraft.getInstance().gui.chat.addRecentChat(it.originalMessage)
-        //    val dryRun = split[0].lowercase().endsWith("dry")
-        //    it.isCanceled = true
-
-        //}
     }
 
 
@@ -156,14 +212,59 @@ class PayAll {
             val players = mutableSetOf<String>( // Only have every player once
                 *get {
                     Minecraft.getInstance().currentServer?.playerList?.mapNotNull { it?.string }?.toTypedArray()
-                } ?: arrayOf(),
+                } ?: get { // 1.16.5 mappings
+                    var i = 0
+                    find<Minecraft, List<*>>(
+                        minecraft,
+                        findFieldType("net.minecraft.client.multiplayer.ServerData"),
+                        findFieldType(List::class.java, depth = 2)
+                    )?.mapNotNull { // net.minecraft.util.text.ITextComponent non-existent :|
+                        find<Any?, String>(it, findMethod({
+                            returnType == String::class.java && i++ == 1
+                        }))
+                    }?.toTypedArray()
+                } ?: emptyArray(),
                 *get {
                     Minecraft.getInstance().player?.connection?.onlinePlayers?.map { it.profile.name }
                         ?.toTypedArray()
-                } ?: arrayOf(),
+                } ?: get {
+                    find<Minecraft, Map<UUID, *>>(
+                        minecraft,
+                        findFieldType("net.minecraft.client.entity.player.ClientPlayerEntity"),
+                        findFieldType("net.minecraft.client.network.play.ClientPlayNetHandler"),
+                        findFieldType(Map::class.java)
+                    )?.values?.mapNotNull {
+                        find<Any?, String>(
+                            it,
+                            findFieldType("com.mojang.authlib.GameProfile"),
+                            findFieldType(String::class.java)
+                        )
+                    }?.toTypedArray()
+                } ?: emptyArray(),
                 *get { Minecraft.getInstance().level?.players()?.map { it.gameProfile.name }?.toTypedArray() }
-                    ?: arrayOf() // This is only as a fallback, no good else
-            ).apply { remove(Minecraft.getInstance().player?.gameProfile?.name) }.toList()
+                    ?: emptyArray() // This is only as a fallback, no good else TODO 1.16.5 impl
+            ).apply {
+                CommandExecutor.tryUntilNoErr(
+                    { remove(minecraft.player?.gameProfile?.name) },
+                    {
+                        remove( // I don't know why I spent 6 hours to prevent paying self, but fun!
+                            find<Minecraft, Any>(
+                                minecraft,
+                                findFieldType("net.minecraft.client.entity.player.ClientPlayerEntity"),
+                                findMethodByReturnType("net.minecraft.util.text.ITextComponent", depth = 3),
+                            ).let {
+                                find<Any, String>(
+                                    it!!, findFieldType(String::class.java)
+                                ).takeUnless { s -> s.isNullOrEmpty() } ?:  find<Any, String>(
+                                    it,
+                                    findFieldType("net.minecraft.util.text.Style", depth = 3),
+                                    findFieldType(String::class.java)
+                                )
+                            }
+                        )
+                    }
+                )?.printStackTrace()
+            }.toList()
                 .shuffled() // we do a bit of gambling :D
             if (dryRun) {
                 sendMessage("§aPlayers Indexed: $players")

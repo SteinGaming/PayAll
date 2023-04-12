@@ -1,5 +1,7 @@
 package eu.steingaming.payall
 
+import eu.steingaming.payall.utils.find
+import eu.steingaming.payall.utils.findFieldType
 import net.minecraft.client.Minecraft
 import net.minecraft.commands.arguments.ArgumentSignatures
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
@@ -8,15 +10,19 @@ import java.time.Instant
 import java.util.*
 
 object CommandExecutor {
-    private fun tryUntilNoErr(vararg inits: () -> Unit) {
+    fun tryUntilNoErr(vararg inits: () -> Unit): Throwable? {
+        var err: Throwable? = null
         for (init in inits) {
             try {
                 init()
-                break
-            } catch (_: Throwable) {
+                return null
+            } catch (e: Throwable) {
+                err = e
             }
         }
+        return err
     }
+
     fun runCommand(cmd: String) {
         tryUntilNoErr({
             Minecraft.getInstance().connection!!::class.java.getDeclaredMethod(
@@ -69,7 +75,23 @@ object CommandExecutor {
                 )
             )
         }, { // 1.18.x
-            Minecraft.getInstance().player?.connection?.send(ServerboundChatPacket::class.java.getConstructor(String::class.java).newInstance("/$cmd"))
+            Minecraft.getInstance().player?.connection?.send(
+                ServerboundChatPacket::class.java.getConstructor(String::class.java).newInstance("/$cmd")
+            )
+        }, { // 1.16.5
+            val connection = find<Minecraft, Any>(
+                PayAll.instance.minecraft,
+                findFieldType(Class.forName("net.minecraft.client.entity.player.ClientPlayerEntity")),
+                findFieldType(Class.forName("net.minecraft.client.network.play.ClientPlayNetHandler"), depth = 2),
+            )!!
+
+            connection::class.java.declaredMethods.find {
+                it.parameterCount == 1 && it.parameters[0].type == Class.forName("net.minecraft.network.IPacket")
+            }!!.invoke(
+                connection,
+                Class.forName("net.minecraft.network.play.client.CChatMessagePacket").getConstructor(String::class.java)
+                    .newInstance("/$cmd")
+            )
         })
     }
 }
