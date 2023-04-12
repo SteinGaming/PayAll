@@ -2,6 +2,7 @@ package eu.steingaming.payall
 
 import eu.steingaming.payall.utils.find
 import eu.steingaming.payall.utils.findFieldType
+import eu.steingaming.payall.utils.or
 import net.minecraft.client.Minecraft
 import net.minecraft.commands.arguments.ArgumentSignatures
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
@@ -81,15 +82,17 @@ object CommandExecutor {
         }, { // 1.16.5
             val connection = find<Minecraft, Any>(
                 PayAll.instance.minecraft,
-                findFieldType(Class.forName("net.minecraft.client.entity.player.ClientPlayerEntity")),
-                findFieldType(Class.forName("net.minecraft.client.network.play.ClientPlayNetHandler"), depth = 2),
+                findFieldType(Class.forName("net.minecraft.client.entity.player.ClientPlayerEntity")) or findFieldType("net.minecraft.client.entity.EntityPlayerSP"),
+                findFieldType(Class.forName("net.minecraft.client.network.play.ClientPlayNetHandler"), depth = 2) or findFieldType("net.minecraft.client.network.NetHandlerPlayClient"),
             )!!
 
             connection::class.java.declaredMethods.find {
-                it.parameterCount == 1 && it.parameters[0].type == Class.forName("net.minecraft.network.IPacket")
+                it.parameterCount == 1 && (it.parameters[0].type == Class.forName("net.minecraft.network.IPacket") || it.parameters[0].type == Class.forName("net.minecraft.network.Packet"))
             }!!.invoke(
                 connection,
-                Class.forName("net.minecraft.network.play.client.CChatMessagePacket").getConstructor(String::class.java)
+                try { Class.forName("net.minecraft.network.play.client.CChatMessagePacket") } catch (_: Throwable) {
+                      Class.forName("net.minecraft.network.play.client.CPacketChatMessage")
+                }.getConstructor(String::class.java)
                     .newInstance("/$cmd")
             )
         })

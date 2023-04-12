@@ -33,6 +33,13 @@ class Finder(
 
 }
 
+infix fun Finder.or(other: Finder): Finder {
+    if (type != other.type) throw IllegalArgumentException("Combining finders requires same type!")
+    return Finder(type, {
+        this@or.invoker(this, it) || other.invoker(this, it)
+    }, args = arrayOf(*this.args, *other.args), maxOf(superDepth, other.superDepth))
+}
+
 fun findField(depth: Int = 0, invoker: Field.(Any) -> Boolean): Finder {
     return Finder(Finder.Type.FIELD, invoker as Any.(Any) -> Boolean, emptyArray(), depth)
 }
