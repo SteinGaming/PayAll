@@ -2,7 +2,6 @@ package eu.steingaming.payall
 
 import eu.steingaming.payall.utils.find
 import eu.steingaming.payall.utils.findFieldType
-import eu.steingaming.payall.utils.findFieldTypeWithSuper
 import net.minecraft.client.Minecraft
 import net.minecraft.commands.arguments.ArgumentSignatures
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
@@ -83,7 +82,7 @@ object CommandExecutor {
             val connection = find<Minecraft, Any>(
                 PayAll.instance.minecraft,
                 findFieldType(Class.forName("net.minecraft.client.entity.player.ClientPlayerEntity")),
-                findFieldTypeWithSuper(Class.forName("net.minecraft.client.network.play.ClientPlayNetHandler")),
+                findFieldType(Class.forName("net.minecraft.client.network.play.ClientPlayNetHandler"), depth = 2),
             )!!
 
             connection::class.java.declaredMethods.find {
