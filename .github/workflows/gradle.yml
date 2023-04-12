@@ -37,9 +37,9 @@ jobs:
     - name: Install GHR
       run: go install github.com/tcnksm/ghr@latest
     - name: Re-release
-      if: github.head_ref == 'main'
+      if: github.ref == 'refs/head/main'
       run: |
           ghr -delete v1.0.0 output/
       env: 
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
       
