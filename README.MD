@@ -46,7 +46,7 @@ Nothing will be sent and this is just meant to help me find methods for identify
 Minecraft mods have a tendency to be ratted, which is why I have the code public, with which everyone can check the code for any rats and build it for themselves. <br>
 Just having the src public isn't enough, ~~so I'm not making any own releases for them.~~ <br>
 
-**!!!! Releases MIGHT be coming, but this is still urgently recommended !!!!**
+**!!!! Releases ARE avalible NOW, but this is still urgently recommended !!!!**
 
 1. Download the project. You can:
     - Get it as an archive [here](https://github.com/SteinGaming/PayAll/archive/refs/heads/main.zip) and extract it
