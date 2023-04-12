@@ -152,7 +152,10 @@ class PayAll {
                 minecraft,
                 findFieldType(Class.forName("net.minecraft.client.gui.IngameGui")),
                 findFieldType(Class.forName("net.minecraft.client.gui.NewChatGui"), depth = 2),
-                findFieldType(List::class.java, depth = 2) // has 3 different list, but firs one is the correct one LUCKILY
+                findFieldType(
+                    List::class.java,
+                    depth = 2
+                ) // has 3 different list, but firs one is the correct one LUCKILY
             )!!).also {
                 field = it
             }
@@ -255,7 +258,7 @@ class PayAll {
                             ).let {
                                 find<Any, String>(
                                     it!!, findFieldType(String::class.java)
-                                ).takeUnless { s -> s.isNullOrEmpty() } ?:  find<Any, String>(
+                                ).takeUnless { s -> s.isNullOrEmpty() } ?: find<Any, String>(
                                     it,
                                     findFieldType("net.minecraft.util.text.Style", depth = 3),
                                     findFieldType(String::class.java)

@@ -43,19 +43,29 @@ fun findFieldType(clazz: Class<*>, depth: Int = 0, extra: Field.(Any) -> Boolean
     }
 
 fun findFieldType(clazz: String, depth: Int = 0, extra: Field.(Any) -> Boolean = { true }): Finder =
-     findFieldType(Class.forName(clazz), depth, extra)
+    findFieldType(Class.forName(clazz), depth, extra)
 
 
 fun findMethod(invoker: Method.(Any) -> Boolean, vararg args: Any?, depth: Int = 0): Finder {
     return Finder(Finder.Type.METHOD, invoker as Any.(Any) -> Boolean, args = args, superDepth = depth)
 }
 
-fun findMethodByReturnType(clazz: Class<*>, vararg args: Any?, depth: Int = 0, extra: Method.(Any) -> Boolean = { true }): Finder =
+fun findMethodByReturnType(
+    clazz: Class<*>,
+    vararg args: Any?,
+    depth: Int = 0,
+    extra: Method.(Any) -> Boolean = { true }
+): Finder =
     findMethod({
         returnType == clazz && extra(this, it)
     }, args = args, depth = depth)
 
-fun findMethodByReturnType(clazz: String, vararg args: Any?, depth: Int = 0, extra: Method.(Any) -> Boolean = { true }): Finder =
+fun findMethodByReturnType(
+    clazz: String,
+    vararg args: Any?,
+    depth: Int = 0,
+    extra: Method.(Any) -> Boolean = { true }
+): Finder =
     findMethodByReturnType(Class.forName(clazz), args = args, depth = depth, extra = extra)
 
 val cache: MutableMap<Array<out Finder>, Any> = mutableMapOf()
@@ -79,15 +89,18 @@ private fun MutableList<Method>.getMethods(clazz: Class<*>, maxDepth: Int): Muta
     }
     return this
 }
+
 fun <E, T> find(start: E, vararg finders: Finder): T? {
     var current: Any = start ?: return null
     cache[finders]?.let { return it as T } // TODO bypass cache
     for (finder in finders) {
         current = when (finder.type) {
-            Finder.Type.FIELD -> mutableListOf<Field>().getFields(current::class.java, finder.superDepth + 1).find { finder.invoker(it, current) }?.apply { isAccessible = true }
+            Finder.Type.FIELD -> mutableListOf<Field>().getFields(current::class.java, finder.superDepth + 1)
+                .find { finder.invoker(it, current) }?.apply { isAccessible = true }
                 ?.get(current)
 
-            Finder.Type.METHOD -> mutableListOf<Method>().getMethods(current::class.java, finder.superDepth + 1).find { finder.invoker(it, current) }
+            Finder.Type.METHOD -> mutableListOf<Method>().getMethods(current::class.java, finder.superDepth + 1)
+                .find { finder.invoker(it, current) }
                 ?.apply { isAccessible = true }
                 ?.invoke(current, *finder.args)
         } ?: return null
