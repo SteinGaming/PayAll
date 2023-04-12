@@ -1,16 +1,19 @@
 package eu.steingaming.payall
 
 //import com.mojang.logging.LogUtils
+import com.mojang.blaze3d.platform.InputConstants
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.LongArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import eu.steingaming.payall.gui.PayAllMenu
 import eu.steingaming.payall.utils.*
 import kotlinx.coroutines.*
 import net.minecraft.client.Minecraft
 import net.minecraft.commands.CommandSourceStack
 import net.minecraftforge.client.event.ClientChatEvent
+import net.minecraftforge.client.event.InputEvent
 import net.minecraftforge.common.MinecraftForge
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.fml.common.Mod
@@ -34,11 +37,48 @@ class PayAll {
 
     private val scope = CoroutineScope(Dispatchers.Default)
 
-
     private var chatMethod: Method? = null
 
     val minecraft: Minecraft = Minecraft::class.java.declaredMethods.find { it.returnType == Minecraft::class.java }!!
         .invoke(null) as Minecraft
+
+    init {
+        instance = this
+        @Suppress("UNCHECKED_CAST")
+        try {
+            MinecraftForge.EVENT_BUS.addListener<net.minecraftforge.client.event.RegisterClientCommandsEvent>(
+                EventPriority.HIGHEST
+            ) {
+                val init: (String, Boolean) -> Unit = { name, dry ->
+                    it.dispatcher.register(
+                        payAllCMD(name, dry) as LiteralArgumentBuilder<CommandSourceStack>
+                    )
+                }
+                init("payall", false)
+                init("payalldry", true)
+            }
+        } catch (t: Throwable) {
+            MinecraftForge.EVENT_BUS.addListener<ClientChatEvent> e@{ // 1.18.0 is missing the ClientCommandHandler >:(
+                val split = it.originalMessage.split(" ")
+                if (!split[0].startsWith("/payall")) return@e
+                it.isCanceled = true
+                if (recentChat.let { r -> r.isEmpty() || r.last() != it.originalMessage })
+                    recentChat.add(it.originalMessage)
+                val dry = split[0].endsWith("dry")
+                val delay = split.getDoubleOrUsage(1) ?: return@e
+                val amount = split.getLongOrUsage(2) ?: return@e
+                handle(delay, amount, cmd = split.subList(3, split.size).toTypedArray(), dryRun = dry)
+            }
+        }
+        CommandExecutor.tryUntilNoErr(
+            {
+                MinecraftForge.EVENT_BUS.addListener<InputEvent.Key> {
+                    if (it.key != InputConstants.KEY_ADD || it.action != InputConstants.RELEASE) return@addListener
+                    minecraft.pushGuiLayer(PayAllMenu())
+                }
+            }
+        )?.printStackTrace()
+    }
 
     private fun sendMessage(str: String) {
         CommandExecutor.tryUntilNoErr(
@@ -99,12 +139,13 @@ class PayAll {
         null
     }
 
-    private fun handle(delay: Double, amount: Long, vararg cmd: String, dryRun: Boolean = false) {
+    fun handle(delay: Double, amount: Long, vararg cmd: String, dryRun: Boolean = false) {
         if (checkActive()) return
         job = scope.launch {
-            run(cmd.takeUnless { it.isEmpty() }?.joinToString(separator = " ") ?: "pay ! $", amount, delay, dryRun)
+            run(cmd.joinToString(separator = " ").trim().takeUnless { it.isEmpty() } ?: "pay ! $", amount, delay, dryRun)
         }
     }
+
 
     private val payAllCMD: (String, Boolean) -> LiteralArgumentBuilder<*> = { name, dry ->
         LiteralArgumentBuilder.literal<Any>(name).executes { usage(); return@executes 1 }
@@ -141,7 +182,6 @@ class PayAll {
             )
     }
 
-
     private var _recentChat: MutableList<String>? = null
         get() {
             return field ?: (try {
@@ -161,39 +201,9 @@ class PayAll {
             }
         }
 
+
     private val recentChat: MutableList<String>
         get() = _recentChat!!
-
-
-    init {
-        instance = this
-        @Suppress("UNCHECKED_CAST")
-        try {
-            MinecraftForge.EVENT_BUS.addListener<net.minecraftforge.client.event.RegisterClientCommandsEvent>(
-                EventPriority.HIGHEST
-            ) {
-                val init: (String, Boolean) -> Unit = { name, dry ->
-                    it.dispatcher.register(
-                        payAllCMD(name, dry) as LiteralArgumentBuilder<CommandSourceStack>
-                    )
-                }
-                init("payall", false)
-                init("payalldry", true)
-            }
-        } catch (t: Throwable) {
-            MinecraftForge.EVENT_BUS.addListener<ClientChatEvent> e@{ // 1.18.0 is missing the ClientCommandHandler >:(
-                val split = it.originalMessage.split(" ")
-                if (!split[0].startsWith("/payall")) return@e
-                it.isCanceled = true
-                if (recentChat.let { r -> r.isEmpty() || r.last() != it.originalMessage })
-                    recentChat.add(it.originalMessage)
-                val dry = split[0].endsWith("dry")
-                val delay = split.getDoubleOrUsage(1) ?: return@e
-                val amount = split.getLongOrUsage(2) ?: return@e
-                handle(delay, amount, cmd = split.subList(3, split.size).toTypedArray(), dryRun = dry)
-            }
-        }
-    }
 
 
     private inline fun <reified T> get(run: () -> T?): T? {
