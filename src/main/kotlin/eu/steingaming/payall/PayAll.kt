@@ -74,6 +74,7 @@ class PayAll {
             {
                 MinecraftForge.EVENT_BUS.addListener<InputEvent.Key> {
                     if (it.key != InputConstants.KEY_ADD || it.action != InputConstants.RELEASE) return@addListener
+                    if (Minecraft.getInstance().currentServer == null) return@addListener
                     minecraft.pushGuiLayer(PayAllMenu())
                 }
             }
