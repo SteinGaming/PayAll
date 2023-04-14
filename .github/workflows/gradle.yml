@@ -41,5 +41,5 @@ jobs:
       run: |
           ghr -delete v1.0.0 output/
       env: 
-        GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
