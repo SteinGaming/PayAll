@@ -38,4 +38,5 @@ jobs:
       uses: softprops/action-gh-release@v0.1.15
       with:
         files: output/*
+        tag_name: v1.0.0
       
