@@ -38,6 +38,7 @@ jobs:
       uses: softprops/action-gh-release@v0.1.15
       with:
         files: output/*
+        body: ${{ github.event.head_commit.message }}
         tag_name: v1.0.0
         generate_release_notes: true
         target_commitish: ${{ github.sha }} 
