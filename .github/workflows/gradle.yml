@@ -14,7 +14,7 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
       uses: actions/setup-go@v4.0.0
     - name: Install GHR
       run: go install github.com/tcnksm/ghr@latest
-    - name: Re-release
+    - name: Release
       if: ${{ github.ref == 'refs/heads/main' }}
       run: |
           ghr -delete v1.0.0 output/
