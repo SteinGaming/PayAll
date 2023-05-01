@@ -25,18 +25,22 @@ fun main(args: Array<String>) {
             unregister(getCommand("pay") ?: return@let)
         }
         registerNew("pay") {
-            val player = ArgumentType.String("player")
+            val player = ArgumentType.Entity("player")
             val amount = ArgumentType.Long("amount")
             addSyntax({ sender, context ->
                 if (sender !is Player) return@addSyntax
-                MinecraftServer.LOGGER.info("${sender.username} paid ${context.get(amount)} to ${context.get(player)}!")
-                sender.sendMessage("Sent ${context.get(amount)} -> ${context.get(player)}!")
+                val p = context.get(player).findFirstPlayer(sender) ?: let {
+                    sender.sendMessage("§cInvalid player ${context.getRaw(player)}")
+                    return@addSyntax
+                }
+                MinecraftServer.LOGGER.info("${sender.username} paid ${context.get(amount)} to ${p.username}!")
+                sender.sendMessage("§aSent ${context.get(amount)} -> ${p.username}!")
             }, *arrayOf(player, amount).apply { if (reverse) reverse() })
             setDefaultExecutor { sender, context ->
-                sender.sendMessage("Oops, wrong syntax! Currently: /pay ${
+                sender.sendMessage("§cOops, wrong syntax! Currently: /pay ${
                     arrayOf("PLAYER", "AMOUNT").apply { if (reverse) reverse() }.joinToString(" ")                   
                 }")
-                sender.sendMessage("Tried: ${context.input}")
+                sender.sendMessage("§cTried: ${context.input}")
             }
         }
     }
@@ -46,13 +50,16 @@ fun main(args: Array<String>) {
             setDefaultExecutor { sender, context ->
                 reverse = !reverse
                 registerPay()
+                MinecraftServer.getConnectionManager().onlinePlayers.forEach {
+                    it.refreshCommands()
+                }
                 sender.sendMessage("Done!")
             }
         }
         registerNew("deez") {
             setDefaultExecutor { sender, context ->
                 for (i in 0..20) {
-                    FakePlayer.initPlayer(UUID.randomUUID(), "Fake-$i", FakePlayerOption().setRegistered(true).setInTabList(true)) {
+                    FakePlayer.initPlayer(UUID.randomUUID(), "Fake_$i", FakePlayerOption().setRegistered(true).setInTabList(true)) {
                         it.updateNewViewer(sender as Player)
                     }
                 }
