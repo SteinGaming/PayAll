@@ -15,7 +15,6 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
         private var delay: EditBox? = null
         private var amount: EditBox? = null
         private var cmd: EditBox? = null
-        //private var dryRun: Boolean? = null
         private val stringList: MutableList<Triple<String, Int, Int>> = mutableListOf()
     }
 
@@ -40,8 +39,6 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
             addRenderableWidget(box)
             return box
         }
-        super.removed()
-        super.init()
         this.minecraft?.mouseHandler?.releaseMouse()
         this.addRenderableWidget(Button.builder(Component.nullToEmpty("Start/Stop")) {
             PayAll.instance.handle(
@@ -62,9 +59,6 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
         delay =  delay.construct("Delay: ", "1.5 = 1500ms pause")
         amount = amount.construct("Amount: ", "10000000")
         cmd =    cmd.construct("Custom Command (empty for default): ", "pay ! $")
-        //addRenderableWidget(CycleButton.onOffBuilder(dryRun ?: false).create(width / 3 + 4, currentX, 80, 20, Component.nullToEmpty("Dryrun")) { _, it ->
-        //    dryRun = it
-        //})
     }
 
     override fun renderBackground(poseStack: PoseStack) {
@@ -87,6 +81,5 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
         delay?.tick()
         amount?.tick()
         cmd?.tick()
-
     }
 }
