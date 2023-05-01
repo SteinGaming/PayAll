@@ -1,6 +1,5 @@
 package eu.steingaming.payall
 
-//import com.mojang.logging.LogUtils
 import com.mojang.blaze3d.platform.InputConstants
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.LongArgumentType
@@ -20,17 +19,12 @@ import net.minecraftforge.fml.common.Mod
 import java.lang.reflect.Method
 import java.util.*
 
-//import org.slf4j.Logger
-//import org.slf4j.LoggerFactory
 
 @Mod(PayAll.MODID)
 class PayAll {
     companion object {
         lateinit var instance: PayAll
         const val MODID = "payall"
-        //val logger: Logger = try { LogUtils.getLogger() } catch (_: Throwable) {
-        //    LoggerFactory.getLogger(PayAll::class.java)
-        //}
     }
 
     private var job: Job? = null
@@ -108,8 +102,6 @@ class PayAll {
                             null, str
                         ), false
                 )
-
-                //ITextComponent.nullToEmpty(str)
             }
         )?.printStackTrace()
     }

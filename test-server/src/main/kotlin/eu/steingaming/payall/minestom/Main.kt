@@ -39,11 +39,6 @@ fun main(args: Array<String>) {
                 sender.sendMessage("Tried: ${context.input}")
             }
         }
-        //registerNew("payall") {
-        //    setDefaultExecutor { sender, context ->
-        //        if (sender is Player) sender.kick("LLLLLLLLLLLLLL")
-        //    }
-        //}
     }
     registerPay()
     MinecraftServer.getCommandManager().apply {
