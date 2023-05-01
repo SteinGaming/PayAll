@@ -30,7 +30,14 @@ fun main(args: Array<String>) {
             addSyntax({ sender, context ->
                 if (sender !is Player) return@addSyntax
                 MinecraftServer.LOGGER.info("${sender.username} paid ${context.get(amount)} to ${context.get(player)}!")
+                sender.sendMessage("Sent ${context.get(amount)} -> ${context.get(player)}!")
             }, *arrayOf(player, amount).apply { if (reverse) reverse() })
+            setDefaultExecutor { sender, context ->
+                sender.sendMessage("Oops, wrong syntax! Currently: /pay ${
+                    arrayOf("PLAYER", "AMOUNT").apply { if (reverse) reverse() }.joinToString(" ")                   
+                }")
+                sender.sendMessage("Tried: ${context.input}")
+            }
         }
         //registerNew("payall") {
         //    setDefaultExecutor { sender, context ->
