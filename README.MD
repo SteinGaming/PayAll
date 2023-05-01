@@ -12,6 +12,7 @@ He replied to someone in the comments, who asked why he doesn't use a mod to aut
   - [Dryrunning](#dryrunning) 
 - [Building (so you don't get ratted)](#building)
   - [Cleanup](#cleaning-up)
+- [Test Server](#test-server)
 ## Usage
 ~~This mod uses chat messages, due to me be being STUPID and not figuring out how client-side commands can be made, even after 4 hours of testing.~~ <br>
 **After some testing with hours of crying, commands have been implemented!**
@@ -52,10 +53,33 @@ Just having the src public isn't enough, ~~so I'm not making any own releases fo
     - Get it as an archive [here](https://github.com/SteinGaming/PayAll/archive/refs/heads/main.zip) and extract it
     - Use the ``git`` util to [clone it](https://github.com/git-guides/git-clone)
 2. Open a terminal in the extracted/cloned directory (some can just right-click on empty space and click "Open Terminal") and execute the following command:
-    - ```./gradlew.bat shadowJar```
+    - ```.\gradlew.bat shadowJar```
 3. The final .jar mod file can be found in `output/`
 4. If you are done, [clean up afterward](#Cleaning-up)
 
 ### Cleaning up
 Only deleting the directory in which you built the project is only a part of it, due to gradle downloading many dependencies. <br>
 If you aren't a developer, then go to your home folder (on windows ``C:\Users\YOUR USER\``) and delete the ``.gradle`` folder. <br>
+
+
+## Test-Server
+
+I created a simple test server for this project, due to me not wanting to have multiple minecraft clients open. <br>
+It uses [Minestom](https://github.com/Minestom/Minestom), for it's low CPU/RAM usage and FakePlayer capabilities. <br>
+If you want to start it, just run:
+```
+.\gradlew.bat run
+```
+
+The server is on 1.19.4, so if you want to test other versions, set a [Velocity Server](https://papermc.io/software/velocity) with the [ViaVersion](https://hangar.papermc.io/ViaVersion/ViaVersion) + [ViaBackwards](https://hangar.papermc.io/ViaVersion/ViaBackwards) plugins, and add the port of the server to the lobby. <br>
+The world only consists of netherite blocks, because why would you need something else? <br>
+The Server contains these commands:
+
+- ``/deez``
+  - Spawns 21 Fake Players
+- ``/pay``
+  - DEFAULT Syntax: ``/pay $player $amount``
+  - REVERSE Syntax: ``/pay $amount $player``
+  - Usage: Duh, for the mod
+- ``/reverse``
+  - This command switches between DEFAULT and REVERSE mode for the ``/pay`` command
