@@ -92,6 +92,6 @@ object CommandExecutor {
                 Class.forName("net.minecraft.network.play.client.CChatMessagePacket").getConstructor(String::class.java)
                     .newInstance("/$cmd")
             )
-        })
+        })?.printStackTrace()
     }
 }
