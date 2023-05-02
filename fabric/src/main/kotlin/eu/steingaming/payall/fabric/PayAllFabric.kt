@@ -70,12 +70,19 @@ class PayAllFabric : ModInitializer, PayAll() {
 
 
     override fun getPlayers(): MutableSet<String> {
-        return mutableSetOf(*(MinecraftClient.getInstance().currentServerEntry?.players?.sample?.map {
-            it.name
-        }?.toTypedArray() ?: arrayOf()), *(MinecraftClient.getInstance().networkHandler?.playerList?.map { it.profile.name }?.toTypedArray() ?: arrayOf()))
+        return mutableSetOf(
+            *(MinecraftClient.getInstance().currentServerEntry?.players?.sample?.map {
+                it.name
+            }?.toTypedArray() ?: arrayOf()),
+            *(MinecraftClient.getInstance().networkHandler?.playerList?.map { it.profile.name }?.toTypedArray()
+                ?: arrayOf())
+        )
     }
 
     override fun runCommand(cmd: String) {
         MinecraftClient.getInstance().networkHandler?.sendCommand(cmd)
     }
+
+    override fun isConnected(): Boolean =
+        MinecraftClient.getInstance().networkHandler?.serverInfo != null
 }

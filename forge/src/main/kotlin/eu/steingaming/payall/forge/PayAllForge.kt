@@ -297,4 +297,7 @@ class PayAllForge: PayAll() {
             )
         }).getOrPrintErr()
     }
+
+    override fun isConnected(): Boolean =
+        minecraft.currentServer != null
 }

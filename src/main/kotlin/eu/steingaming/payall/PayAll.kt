@@ -85,6 +85,10 @@ abstract class PayAll {
             var i = 0
             while (true) {
                 ensureActive()
+                if (!isConnected()) {
+                    sendMessage("§cInterrupted due to disconnect!")
+                    return@coroutineScope
+                }
                 val p = players.getOrNull(i++) ?: break
                 sendMessage("§7Sending: /${cmd.replace("!", p).replace("$", amount.toString())}")
                 val newCMD = cmd.replace("!", p).replace("$", amount.toString())
@@ -95,6 +99,8 @@ abstract class PayAll {
             job = null
         }
     }
+
+    abstract fun isConnected(): Boolean
 
     abstract fun runCommand(cmd: String)
 }
