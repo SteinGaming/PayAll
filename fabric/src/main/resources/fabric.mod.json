@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "payall",
+  "version": "1.0",
+
+  "name": "Example Mod",
+  "description": "This is an example description! Tell everyone what your mod is about!",
+  "authors": [
+    "Me!"
+  ],
+  "contact": {
+    "homepage": "https://steingaming.undo.it/",
+    "sources": "https://github.com/SteinGaming/PayAll"
+  },
+
+  "license": "MIT",
+
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "eu.steingaming.payall.fabric.PayAllFabric"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": ">=0.14.19",
+    "fabric-api": "*",
+    "minecraft": "~1.19.4",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

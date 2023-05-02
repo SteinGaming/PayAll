@@ -1,16 +1,11 @@
-package eu.steingaming.payall.gui
+/*package eu.steingaming.payall.fabric.gui
 
-import com.mojang.blaze3d.vertex.PoseStack
-import eu.steingaming.payall.PayAll
-import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.components.Button
-import net.minecraft.client.gui.components.EditBox
-import net.minecraft.client.gui.screens.Screen
-import net.minecraft.network.chat.CommonComponents
-import net.minecraft.network.chat.Component
-import net.minecraft.util.FastColor
+import net.minecraft.client.MinecraftClient
+import net.minecraft.client.gui.EditBox
+import net.minecraft.client.gui.screen.Screen
+import net.minecraft.text.Text
 
-class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
+class PayAllMenu : Screen(Text.of("PayAll")) {
     companion object {
         private var delay: EditBox? = null
         private var amount: EditBox? = null
@@ -24,7 +19,7 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
         fun textToInput(text: String, hint: String): EditBox {
             stringList += Triple(text, width / 3 + 3, currentX)
             return EditBox(
-                Minecraft.getInstance().font,
+                MinecraftClient.getInstance().textRenderer,
                 (width - width / 3) - (width / 8),
                 currentX.also {
                     currentX += 25
@@ -41,7 +36,7 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
         }
         this.minecraft?.mouseHandler?.releaseMouse()
         this.addRenderableWidget(Button.builder(Component.nullToEmpty("Start/Stop")) {
-            PayAll.instance.handle(
+            PayAllForge.instance.handle(
                 delay!!.value.toDoubleOrNull() ?: return@builder,
                 amount!!.value.toLongOrNull() ?: return@builder,
                 cmd = cmd!!.value.split(" ").toTypedArray(),
@@ -49,7 +44,7 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
             )
         }.pos(width / 2 - 75, height - height / 3 - 24).build())
         this.addRenderableWidget(Button.builder(Component.nullToEmpty("Dryrun")) {
-            PayAll.instance.handle(
+            PayAllForge.instance.handle(
                 delay!!.value.toDoubleOrNull() ?: return@builder,
                 amount!!.value.toLongOrNull() ?: return@builder,
                 cmd = cmd!!.value.split(" ").toTypedArray(),
@@ -82,4 +77,4 @@ class PayAllMenu : Screen(Component.nullToEmpty("PayAll")) {
         amount?.tick()
         cmd?.tick()
     }
-}
+}*/
