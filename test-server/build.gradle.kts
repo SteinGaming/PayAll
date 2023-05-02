@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.8.0"
     application
+    id("org.jetbrains.kotlin.jvm")
 }
 repositories {
     mavenCentral()
@@ -8,7 +8,6 @@ repositories {
 }
 dependencies {
     implementation("com.github.Minestom.Minestom:Minestom:8ad2c7701f")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 }
 
 application {
