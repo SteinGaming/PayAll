@@ -3,13 +3,13 @@
   "id": "payall",
   "version": "1.0",
 
-  "name": "Example Mod",
+  "name": "PayAll",
   "description": "This is an example description! Tell everyone what your mod is about!",
   "authors": [
-    "Me!"
+    "SteinGaming"
   ],
   "contact": {
-    "homepage": "https://steingaming.undo.it/",
+    "homepage": "http://steingaming.undo.it/",
     "sources": "https://github.com/SteinGaming/PayAll"
   },
 
@@ -28,8 +28,5 @@
     "fabric-api": "*",
     "minecraft": "~1.19.4",
     "java": ">=17"
-  },
-  "suggests": {
-    "another-mod": "*"
   }
 }
