@@ -8,6 +8,7 @@ import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.Player
 import net.minestom.server.entity.fakeplayer.FakePlayer
 import net.minestom.server.entity.fakeplayer.FakePlayerOption
+import net.minestom.server.event.player.PlayerCommandEvent
 import net.minestom.server.event.player.PlayerLoginEvent
 import net.minestom.server.instance.block.Block
 import java.util.*
@@ -43,6 +44,9 @@ fun main(args: Array<String>) {
                 sender.sendMessage("§cTried: ${context.input}")
             }
         }
+    }
+    MinecraftServer.getGlobalEventHandler().addListener(PlayerCommandEvent::class.java) {
+        println("Player ${it.player.username} executed: ${it.command}")
     }
     registerPay()
     MinecraftServer.getCommandManager().apply {
