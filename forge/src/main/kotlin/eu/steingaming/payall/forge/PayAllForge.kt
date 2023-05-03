@@ -10,6 +10,7 @@ import eu.steingaming.payall.PayAll
 import eu.steingaming.payall.forge.gui.PayAllMenu
 import eu.steingaming.payall.utils.*
 import kotlinx.coroutines.*
+import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.arguments.ArgumentSignatures
@@ -17,8 +18,11 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 import net.minecraft.network.protocol.game.ServerboundChatPacket
 import net.minecraftforge.client.event.ClientChatEvent
-import net.minecraftforge.client.event.InputEvent
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent
+import net.minecraftforge.client.settings.KeyConflictContext
+import net.minecraftforge.client.settings.KeyModifier
 import net.minecraftforge.common.MinecraftForge
+import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.EventPriority
 import net.minecraftforge.fml.common.Mod
 import java.lang.reflect.Method
@@ -27,20 +31,37 @@ import java.util.*
 
 
 @Mod(PayAll.MODID)
-class PayAllForge: PayAll() {
+class PayAllForge : PayAll() {
     companion object {
         lateinit var instance: PayAllForge
     }
 
     private var chatMethod: Method? = null
 
+    private val keyBind by lazy {
+        KeyMapping(
+            "key.payall.open",
+            KeyConflictContext.IN_GAME,
+            KeyModifier.NONE,
+            InputConstants.Type.KEYSYM,
+            InputConstants.KEY_ADD,
+            "key.categories.misc"
+        )
+    }
     val minecraft: Minecraft = Minecraft::class.java.declaredMethods.find { it.returnType == Minecraft::class.java }!!
         .invoke(null) as Minecraft
 
     init {
         instance = this
+
+        tryUntilNoErr({
+            MinecraftForge.EVENT_BUS.addListener<RegisterKeyMappingsEvent> {
+                it.register(keyBind)
+            }
+        }).getOrPrintErr()
+
         @Suppress("UNCHECKED_CAST")
-        try {
+        tryUntilNoErr({
             MinecraftForge.EVENT_BUS.addListener<net.minecraftforge.client.event.RegisterClientCommandsEvent>(
                 EventPriority.HIGHEST
             ) {
@@ -52,7 +73,7 @@ class PayAllForge: PayAll() {
                 init("payall", false)
                 init("payalldry", true)
             }
-        } catch (t: Throwable) {
+        }, {
             MinecraftForge.EVENT_BUS.addListener<ClientChatEvent> e@{ // 1.18.0 is missing the ClientCommandHandler >:(
                 val split = it.originalMessage.split(" ")
                 if (!split[0].startsWith("payalldry")) return@e
@@ -64,13 +85,14 @@ class PayAllForge: PayAll() {
                 val amount = split.getLongOrUsage(2) ?: return@e
                 handle(delay, amount, cmd = split.subList(3, split.size).toTypedArray(), dryRun = dry)
             }
-        }
+        }).getOrPrintErr()
         tryUntilNoErr<Unit>(
             {
-                MinecraftForge.EVENT_BUS.addListener<InputEvent.Key> {
-                    if (it.key != InputConstants.KEY_ADD || it.action != InputConstants.RELEASE) return@addListener
-                    if (Minecraft.getInstance().currentServer == null) return@addListener
-                    minecraft.pushGuiLayer(PayAllMenu())
+                MinecraftForge.EVENT_BUS.addListener<TickEvent.ClientTickEvent> {
+                    if (it.phase == TickEvent.Phase.END)
+                        while (keyBind.consumeClick()) {
+                            minecraft.pushGuiLayer(PayAllMenu())
+                        }
                 }
             } // TODO Add previous version support
         ).getOrPrintErr()
@@ -106,7 +128,6 @@ class PayAllForge: PayAll() {
             }
         ).getOrPrintErr()
     }
-
 
 
     private val payAllCMD: (String, Boolean) -> LiteralArgumentBuilder<*> = { name, dry ->
@@ -170,8 +191,8 @@ class PayAllForge: PayAll() {
 
     override fun getOwnName(): String? {
         return tryUntilNoErr({ minecraft.player?.gameProfile?.name },
-        {
-             // I don't know why I spent 6 hours to prevent paying self, but fun!
+            {
+                // I don't know why I spent 6 hours to prevent paying self, but fun!
                 find<Minecraft, Any>(
                     minecraft,
                     findFieldType("net.minecraft.client.entity.player.ClientPlayerEntity"),
@@ -186,7 +207,7 @@ class PayAllForge: PayAll() {
                     )
                 }
 
-        }).getOrPrintErr()
+            }).getOrPrintErr()
     }
 
     override fun getPlayers(): MutableSet<String> = mutableSetOf( // Only have every player once
